@@ -1,0 +1,37 @@
+name: Alertas Switch 2
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alertas
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Verificar precos
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python alertas_switch2.py --uma-vez
+
+      - name: Guardar estado
+        run: |
+          git config user.name "alertas-bot"
+          git config user.email "alertas-bot@users.noreply.github.com"
+          git add estado.json
+          git diff --staged --quiet || (git commit -m "estado" && git push)
